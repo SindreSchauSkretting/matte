@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mattespill</title>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; max-width: 600px; margin: auto; }
+    pre { background: #f0f0f0; padding: 1rem; border-radius: 8px; min-height: 200px; white-space: pre-wrap; }
+    input { font-size: 1.2rem; padding: 0.5rem; width: 100%; margin-top: 1rem; }
+    button { font-size: 1.2rem; padding: 0.5rem 1rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Mattespill</h1>
+  <pre id="output">Laster inn spillet...</pre>
+  <input id="input" type="text" placeholder="Skriv svaret her" />
+  <button onclick="sendInput()">Svar</button>
+
+  <script>
+    let pyodideReady = false;
+    let py;
+
+    async function startPyodide() {
+      py = await loadPyodide();
+      await py.loadPackagesFromImports("import random");
+      await py.runPythonAsync(`import random
+
+output = []
+riktige_paa_rad = 0
+
+def skriv(txt):
+    output.append(txt)
+
+oppgaver = [
+    ("Hva er 2 + 2?", 4),
+    ("Hva er 5 * 3?", 15),
+    ("Hva er 12 / 4?", 3),
+    ("Hva er 10 - 3?", 7),
+    ("Hva er 9 + 6?", 15),
+    ("Hva er 7 * 2?", 14),
+    ("En gutt sparer 20 kr i uken. Hvor mye sparer han på 4 uker?", 80),
+    ("Hva er 27 * 2?", 54),
+    ("Hva er 300 - 125?", 175),
+    ("Et teater har 12 rader med 10 stoler i hver. Hvor mange stoler?", 120),
+    ("Hva er 14 * 3?", 42),
+    ("Hva er 144 / 8?", 18),
+    ("Et telt rommer 5 personer. Hvor mange telt trengs for 20 personer?", 4),
+    ("Hva er 11 + 19?", 30),
+    ("Hva er 48 + 19?", 67),
+    ("Hva er 73 - 29?", 44),
+    ("Hva er 9 * 6?", 54),
+    ("Hva er 63 / 7?", 9),
+    ("En bok koster 80 kr. Hvor mye koster 3 bøker?", 240),
+    ("Hva er 13 * 3?", 39),
+    ("Hva er 100 / 5?", 20),
+    ("En film varer i 120 minutter. Hvor mange timer er det?", 2),
+    ("Du har 90 kr og bruker 25 kr. Hvor mye har du igjen?", 65),
+    ("Hva er 7 * 7?", 49),
+    ("Hva er 81 / 9?", 9),
+    ("Hva er 45 + 28?", 73),
+    ("Mona har 30 kroner og kjøper en is for 18 kroner. Hvor mye har hun igjen?", 12)
+]
+
+def neste_oppgave():
+    global aktuell, fasit
+    if not oppgaver:
+        skriv("Ingen oppgaver tilgjengelig.")
+        return
+    aktuell, fasit = random.choice(oppgaver)
+    skriv(f"\n{aktuell}")
+
+def sjekk_svar(s):
+    global riktige_paa_rad
+    try:
+        if abs(float(s) - fasit) < 0.0001:
+            riktige_paa_rad += 1
+            skriv(f"Riktig! Du har {riktige_paa_rad} riktige på rad.")
+        else:
+            skriv(f"Feil. Riktig svar var {fasit}.")
+            if riktige_paa_rad < 10:
+                riktige_paa_rad = 0
+                skriv("Du hadde færre enn 10 riktige. Spillet starter på nytt!")
+        if riktige_paa_rad >= 10:
+            skriv("Gratulerer! Du fikk 10 riktige på rad og vant spillet!")
+        else:
+            neste_oppgave()
+    except:
+        skriv("Skriv inn et tall.")
+
+neste_oppgave()`);
+      document.getElementById("output").innerText = py.globals.get("output").toJs().join("\n");
+      pyodideReady = true;
+    }
+
+    async function sendInput() {
+      if (!pyodideReady) return;
+      const userInput = document.getElementById("input").value;
+      document.getElementById("input").value = "";
+      await py.runPythonAsync(`sjekk_svar("${userInput}")`);
+      document.getElementById("output").innerText = py.globals.get("output").toJs().join("\n");
+    }
+
+    startPyodide();
+  </script>
+</body>
+</html>
